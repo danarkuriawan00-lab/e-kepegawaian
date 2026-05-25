@@ -9,7 +9,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -46,8 +46,12 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm bg-indigo-800 px-3 py-1.5 rounded-full border border-indigo-700 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 bg-green-400 rounded-full animate-ping"></span>
+                    <!-- Status Database Cloud Sync -->
+                    <div id="db-sync-status" class="hidden text-xs bg-indigo-800 px-3 py-1.5 rounded-full border border-indigo-700 flex items-center gap-1.5">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        <span id="sync-text">Cloud Terhubung</span>
+                    </div>
+                    <span class="text-sm bg-indigo-950 px-3 py-1.5 rounded-full border border-indigo-800 flex items-center gap-1.5">
                         Admin Kepegawaian
                     </span>
                 </div>
@@ -98,6 +102,32 @@
                 <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
                     <i data-lucide="file-check" class="w-6 h-6"></i>
                 </div>
+            </div>
+        </div>
+
+        <!-- UTILITIES / BACKUP & SYNC CARD -->
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-700">
+            <div class="flex items-center gap-4">
+                <div class="p-3.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                    <i data-lucide="database-backup" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base">Arsip & Cadangan Google Drive</h3>
+                    <p class="text-xs text-slate-400 mt-1">Simpan atau pulihkan seluruh database pegawai beserta status unggahan berkas ke Google Drive Anda dalam format JSON.</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <!-- Backup To G-Drive -->
+                <button onclick="eksporDatabaseJSON()" class="flex-1 md:flex-initial text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
+                    <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                    Unduh File Database (Simpan ke G-Drive)
+                </button>
+                <!-- Restore From G-Drive -->
+                <label class="flex-1 md:flex-initial cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition text-center">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    Impor Database (Ambil dari G-Drive)
+                    <input type="file" id="import-db-input" class="hidden" accept=".json" onchange="imporDatabaseJSON(event)">
+                </label>
             </div>
         </div>
 
@@ -271,9 +301,17 @@
     <!-- NOTIFICATION SYSTEM -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // 14 Jenis Dokumen yang Diminta
+    <!-- FIREBASE & CORE LOGIC SCRIPTS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global state
+        let dbRef = null;
+        let currentUser = null;
+
+        // 14 Jenis Dokumen
         const DAFTAR_DOKUMEN = [
             { id: 1, nama: "SK CPNS / PPPK", key: "sk_cpns" },
             { id: 2, nama: "SK PNS / PPPK", key: "sk_pns" },
@@ -291,7 +329,7 @@
             { id: 14, nama: "DRH (Daftar Riwayat Hidup)", key: "drh" }
         ];
 
-        // Default Data Pegawai (Simulasi Awal)
+        // Default Data Pegawai (Mock Initial State)
         let dataPegawai = [
             {
                 id: "peg-1",
@@ -301,10 +339,10 @@
                 golongan: "III/b",
                 jabatan: "Pranata Komputer Ahli Muda",
                 dokumen: {
-                    "sk_cpns": { namaFile: "SK_CPNS_Supriyadi.pdf", tanggal: "12-03-2019", ukuran: "1.4 MB" },
-                    "sk_pns": { namaFile: "SK_PNS_Supriyadi_Final.pdf", tanggal: "01-04-2020", ukuran: "1.2 MB" },
-                    "sk_jabatan": { namaFile: "SK_Prakom_Muda.pdf", tanggal: "15-01-2023", ukuran: "980 KB" },
-                    "drh": { namaFile: "DRH_Supriyadi_2025.pdf", tanggal: "10-10-2025", ukuran: "2.1 MB" }
+                    "sk_cpns": { namaFile: "SK_CPNS_Supriyadi.pdf", tanggal: "12-03-2019", ukuran: "1.4 MB", isMock: true },
+                    "sk_pns": { namaFile: "SK_PNS_Supriyadi_Final.pdf", tanggal: "01-04-2020", ukuran: "1.2 MB", isMock: true },
+                    "sk_jabatan": { namaFile: "SK_Prakom_Muda.pdf", tanggal: "15-01-2023", ukuran: "980 KB", isMock: true },
+                    "drh": { namaFile: "DRH_Supriyadi_2025.pdf", tanggal: "10-10-2025", ukuran: "2.1 MB", isMock: true }
                 }
             },
             {
@@ -315,9 +353,9 @@
                 golongan: "IX",
                 jabatan: "Ahli Pertama - Guru Kelas",
                 dokumen: {
-                    "sk_cpns": { namaFile: "SK_PPPK_Rina_2021.pdf", tanggal: "01-06-2021", ukuran: "1.8 MB" },
-                    "spk": { namaFile: "Perjanjian_Kerja_Rina_2026.pdf", tanggal: "10-01-2026", ukuran: "2.5 MB" },
-                    "spmt": { namaFile: "SPMT_Mulai_Tugas_Rina.pdf", tanggal: "02-06-2021", ukuran: "540 KB" }
+                    "sk_cpns": { namaFile: "SK_PPPK_Rina_2021.pdf", tanggal: "01-06-2021", ukuran: "1.8 MB", isMock: true },
+                    "spk": { namaFile: "Perjanjian_Kerja_Rina_2026.pdf", tanggal: "10-01-2026", ukuran: "2.5 MB", isMock: true },
+                    "spmt": { namaFile: "SPMT_Mulai_Tugas_Rina.pdf", tanggal: "02-06-2021", ukuran: "540 KB", isMock: true }
                 }
             },
             {
@@ -328,20 +366,85 @@
                 golongan: "II/c",
                 jabatan: "Pengelola Informasi Kepegawaian",
                 dokumen: {
-                    "sk_cpns": { namaFile: "SK_CPNS_Fauzi_2024.pdf", tanggal: "15-03-2024", ukuran: "1.5 MB" }
+                    "sk_cpns": { namaFile: "SK_CPNS_Fauzi_2024.pdf", tanggal: "15-03-2024", ukuran: "1.5 MB", isMock: true }
                 }
             }
         ];
 
-        // Pegawai yang saat ini dipilih
         let selectedPegawaiId = null;
 
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            renderDaftarPegawai();
-            updateDashboardStats();
-            lucide.createIcons();
-        });
+        // Firebase Initializations
+        const initFirebase = async () => {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    const db = getFirestore(app);
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                    // Authenticate
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            currentUser = user;
+                            // Setup Real-time listener for current state
+                            dbRef = doc(db, 'artifacts', appId, 'public', 'data', 'kepegawaian_db', 'main_state');
+                            
+                            // Ambil data pertama kali dari Firestore
+                            const docSnap = await getDoc(dbRef);
+                            if (docSnap.exists() && docSnap.data().dataPegawai) {
+                                dataPegawai = docSnap.data().dataPegawai;
+                            } else {
+                                // Jika Firestore kosong, inisialisasi dengan mock data kita
+                                await setDoc(dbRef, { dataPegawai });
+                            }
+
+                            // Dengar perubahan data real-time
+                            onSnapshot(dbRef, (docSnapshot) => {
+                                if (docSnapshot.exists() && docSnapshot.data().dataPegawai) {
+                                    dataPegawai = docSnapshot.data().dataPegawai;
+                                    renderDaftarPegawai();
+                                    updateDashboardStats();
+                                    if (selectedPegawaiId) {
+                                        selectPegawai(selectedPegawaiId);
+                                    }
+                                }
+                            }, (err) => {
+                                console.error("Firebase listen error: ", err);
+                            });
+
+                            document.getElementById('db-sync-status').classList.remove('hidden');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn("Firebase config not available or failed to load. Running in memory-only mode.", error);
+            }
+        };
+
+        // Save State helper
+        const saveState = async () => {
+            if (dbRef && currentUser) {
+                try {
+                    await setDoc(dbRef, { dataPegawai });
+                } catch (e) {
+                    console.error("Failed to sync to Cloud Database", e);
+                }
+            } else {
+                // local refresh update
+                renderDaftarPegawai();
+                updateDashboardStats();
+                if (selectedPegawaiId) {
+                    selectPegawai(selectedPegawaiId);
+                }
+            }
+        };
 
         // TOAST NOTIFIKASI
         function showToast(message, type = 'success') {
@@ -360,12 +463,10 @@
             container.appendChild(toast);
             lucide.createIcons();
 
-            // Animate In
             setTimeout(() => {
                 toast.classList.remove('translate-y-5', 'opacity-0');
             }, 10);
 
-            // Animate Out & Destroy
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
@@ -375,6 +476,7 @@
         // RENDER DAFTAR PEGAWAI DI PANEL KIRI
         function renderDaftarPegawai(filterQuery = "", filterStatus = "ALL") {
             const listContainer = document.getElementById('pegawai-list');
+            if (!listContainer) return;
             listContainer.innerHTML = '';
 
             const filtered = dataPegawai.filter(peg => {
@@ -403,7 +505,6 @@
                     ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-100' 
                     : 'border-slate-100 bg-white hover:bg-slate-50/80';
 
-                // Status Badge Color
                 let statusBadge = '';
                 if (peg.status === 'PNS') statusBadge = 'bg-emerald-100 text-emerald-800';
                 else if (peg.status === 'PPPK') statusBadge = 'bg-amber-100 text-amber-800';
@@ -424,7 +525,6 @@
                         </div>
                     </div>
                     
-                    <!-- Progress Berkas -->
                     <div class="mt-3">
                         <div class="flex items-center justify-between text-[10px] mb-1">
                             <span class="text-slate-500">Kesiapan Berkas</span>
@@ -446,30 +546,23 @@
             renderDaftarPegawai(query, status);
         }
 
-        // AKSI SAAT SEORANG PEGAWAI DIKLIK (SELECT)
+        // AKSI SAAT SEORANG PEGAWAI DIKLIK
         function selectPegawai(id) {
             selectedPegawaiId = id;
             
-            // Re-render list agar highlight aktif berpindah
-            filterPegawai();
-
             const peg = dataPegawai.find(p => p.id === id);
             if (!peg) return;
 
-            // Tampilkan Workspace, Sembunyikan Default State
             document.getElementById('no-selection-state').classList.add('hidden');
             document.getElementById('workspace-state').classList.remove('hidden');
 
-            // Set Data Header Profil
             document.getElementById('det-nama').innerText = peg.nama;
             document.getElementById('det-nip').innerText = peg.nip;
             document.getElementById('det-jabatan').innerText = `${peg.jabatan} - Gol/Ruang: ${peg.golongan || '-'}`;
             
-            // Inisial Avatar
             const inisial = peg.nama.split(',')[0].trim().substring(0,2).toUpperCase();
             document.getElementById('avatar-placeholder').innerText = inisial;
 
-            // Status Badge
             const statusBadge = document.getElementById('det-badge-status');
             statusBadge.innerText = peg.status;
             statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold ';
@@ -477,18 +570,7 @@
             else if (peg.status === 'PPPK') statusBadge.className += 'bg-amber-100 text-amber-800';
             else statusBadge.className += 'bg-indigo-100 text-indigo-800';
 
-            // Hitung & Render Kelengkapan
             renderDokumenGrid(peg);
-        }
-
-        // HITUNG RASIO KELENGKAPAN BERKAS PEGAWAI
-        function updateKelengkapanUI(peg) {
-            const totalDocs = DAFTAR_DOKUMEN.length;
-            const uploadedDocs = Object.keys(peg.dokumen || {}).length;
-            const percent = Math.round((uploadedDocs / totalDocs) * 100);
-
-            document.getElementById('det-kelengkapan-persen').innerText = `${percent}%`;
-            document.getElementById('det-kelengkapan-rasio').innerText = `${uploadedDocs} dari ${totalDocs} diunggah`;
         }
 
         // RENDER 14 SLOT KELENGKAPAN DOKUMEN PEGAWAI
@@ -503,7 +585,6 @@
                 const card = document.createElement('div');
                 card.className = `p-4 rounded-xl border transition-all ${isUploaded ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-white'}`;
                 
-                // Header Slot Dokumen
                 let innerHtml = `
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
@@ -513,7 +594,6 @@
                             </div>
                 `;
 
-                // Deskripsi File
                 if (isUploaded) {
                     innerHtml += `
                         <div class="mt-2.5 bg-white border border-emerald-100 p-2 rounded-lg flex items-center justify-between gap-2 shadow-sm">
@@ -558,13 +638,19 @@
                 grid.appendChild(card);
             });
 
-            // Update stats & icons
-            updateKelengkapanUI(peg);
+            // Update stats & counters
+            const totalDocs = DAFTAR_DOKUMEN.length;
+            const uploadedDocs = Object.keys(peg.dokumen || {}).length;
+            const percent = Math.round((uploadedDocs / totalDocs) * 100);
+
+            document.getElementById('det-kelengkapan-persen').innerText = `${percent}%`;
+            document.getElementById('det-kelengkapan-rasio').innerText = `${uploadedDocs} dari ${totalDocs} diunggah`;
+
             updateDashboardStats();
             lucide.createIcons();
         }
 
-        // SIMULASI UPLOADER
+        // PROSES UPLOAD FILE
         function handleSimulasiUpload(event, docKey, docNama) {
             const fileInput = event.target;
             if (fileInput.files.length === 0) return;
@@ -573,52 +659,77 @@
             const originalName = file.name;
             const fileSize = (file.size / (1024 * 1024)).toFixed(2) + " MB";
             
-            // Format Hari Ini
             const hariIni = new Date();
             const formatTgl = String(hariIni.getDate()).padStart(2, '0') + '-' + 
                               String(hariIni.getMonth() + 1).padStart(2, '0') + '-' + 
                               hariIni.getFullYear();
 
-            // Tambahkan ke data pegawai terpilih
-            const peg = dataPegawai.find(p => p.id === selectedPegawaiId);
-            if (peg) {
-                peg.dokumen[docKey] = {
-                    namaFile: originalName,
-                    tanggal: formatTgl,
-                    ukuran: fileSize
-                };
+            // Ubah file ke base64 agar tersimpan utuh di database awan & bisa didownload kapan saja
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const peg = dataPegawai.find(p => p.id === selectedPegawaiId);
+                if (peg) {
+                    peg.dokumen[docKey] = {
+                        namaFile: originalName,
+                        tanggal: formatTgl,
+                        ukuran: fileSize,
+                        fileDataUrl: e.target.result // Menyimpan file asli (PDF/Gambar) ke database
+                    };
 
-                // Re-render
-                renderDokumenGrid(peg);
-                filterPegawai(); // Update kesiapan berkas di list kiri
-                showToast(`Berkas "${docNama}" berhasil diunggah secara simulasi.`);
-            }
+                    saveState();
+                    showToast(`Berkas "${docNama}" berhasil diunggah.`);
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
-        // SIMULASI UNDUH DOKUMEN
+        // UNDUH BERKAS SECARA NYATA
         function simulasikanUnduh(docKey) {
             const peg = dataPegawai.find(p => p.id === selectedPegawaiId);
             if (peg && peg.dokumen[docKey]) {
-                const file = peg.dokumen[docKey];
-                showToast(`Mengunduh berkas: ${file.namaFile} (${file.ukuran})`, 'info');
+                const doc = peg.dokumen[docKey];
+                
+                // Jika berkas memiliki fileDataUrl (Base64 file asli)
+                if (doc.fileDataUrl) {
+                    const link = document.createElement('a');
+                    link.href = doc.fileDataUrl;
+                    link.download = doc.namaFile;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast(`Unduhan berkas "${doc.namaFile}" berhasil dimulai.`);
+                } else if (doc.isMock) {
+                    // Buat file teks dummy dinamis jika merupakan mock data awal
+                    const dummyContent = `=== ARSIP DIGITAL PEGAWAI ===\n\nNama Pegawai: ${peg.nama}\nNIP: ${peg.nip}\nBerkas: ${doc.namaFile}\nTanggal Arsip: ${doc.tanggal}\nStatus Verifikasi: Valid (Simulated)`;
+                    const blob = new Blob([dummyContent], { type: 'text/plain;charset=utf-8' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = doc.namaFile;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(blobUrl);
+                    
+                    showToast(`Mengunduh Berkas Contoh: "${doc.namaFile}"`, 'info');
+                }
             }
         }
 
-        // SIMULASI HAPUS FILE
+        // HAPUS BERKAS
         function hapusFile(docKey) {
             const peg = dataPegawai.find(p => p.id === selectedPegawaiId);
             if (peg && peg.dokumen[docKey]) {
                 const namaFile = peg.dokumen[docKey].namaFile;
                 delete peg.dokumen[docKey];
                 
-                // Re-render
-                renderDokumenGrid(peg);
-                filterPegawai(); // Update list kiri
+                saveState();
                 showToast(`Berkas "${namaFile}" berhasil dihapus.`);
             }
         }
 
-        // UPDATE METRIK COUNTERS DI ATAS DASHBOARD
+        // UPDATE STATS DI ATAS DASHBOARD
         function updateDashboardStats() {
             const total = dataPegawai.length;
             const pns = dataPegawai.filter(p => p.status === 'PNS' || p.status === 'CPNS').length;
@@ -635,7 +746,47 @@
             document.getElementById('stat-files').innerText = totalFiles;
         }
 
-        // MODAL ADD PEGAWAI HANDLERS
+        // EKSPOR DATABASE KE FILE JSON (Cadangkan ke Google Drive)
+        function eksporDatabaseJSON() {
+            const jsonString = JSON.stringify(dataPegawai, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = "database_kepegawaian.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast("Database berhasil diekspor! Silakan upload berkas 'database_kepegawaian.json' ini ke Google Drive Anda.");
+        }
+
+        // IMPOR DATABASE DARI FILE JSON
+        function imporDatabaseJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        dataPegawai = importedData;
+                        saveState();
+                        showToast("Database berhasil diimpor & dipulihkan dari cadangan!");
+                    } else {
+                        showToast("Format file database tidak valid.", "error");
+                    }
+                } catch (err) {
+                    showToast("Gagal membaca berkas JSON.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // MODAL TAMBAH PEGAWAI
         function openAddModal() {
             document.getElementById('add-modal').classList.remove('hidden');
         }
@@ -654,7 +805,6 @@
             const golongan = document.getElementById('add-golongan').value;
             const jabatan = document.getElementById('add-jabatan').value;
 
-            // Buat Id Baru
             const newId = `peg-${Date.now()}`;
             const newPegawai = {
                 id: newId,
@@ -663,21 +813,37 @@
                 status: status,
                 golongan: golongan || '-',
                 jabatan: jabatan,
-                dokumen: {} // Kosong saat buat baru
+                dokumen: {}
             };
 
             dataPegawai.unshift(newPegawai);
             
-            // Re-render
-            filterPegawai();
-            updateDashboardStats();
+            saveState();
             closeAddModal();
-
-            // Auto select pegawai baru agar admin bisa langsung mengunggah file
             selectPegawai(newId);
 
-            showToast(`Pegawai "${nama}" berhasil didaftarkan. Silakan mulai unggah berkasnya.`);
+            showToast(`Pegawai "${nama}" berhasil didaftarkan.`);
         }
+
+        // Daftarkan fungsi ke global agar bisa dipanggil lewat atribut HTML `onclick`
+        window.filterPegawai = filterPegawai;
+        window.selectPegawai = selectPegawai;
+        window.handleSimulasiUpload = handleSimulasiUpload;
+        window.simulasikanUnduh = simulasikanUnduh;
+        window.hapusFile = hapusFile;
+        window.eksporDatabaseJSON = eksporDatabaseJSON;
+        window.imporDatabaseJSON = imporDatabaseJSON;
+        window.openAddModal = openAddModal;
+        window.closeAddModal = closeAddModal;
+        window.handleTambahPegawai = handleTambahPegawai;
+
+        // Run Init
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            renderDaftarPegawai();
+            updateDashboardStats();
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>
