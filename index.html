@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Data Kepegawaian & Berkas SK</title>
+    <title>Sistem E-Kepegawaian - Login</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -32,223 +32,288 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white text-indigo-900 p-2 rounded-lg">
-                        <i data-lucide="users" class="w-6 h-6"></i>
+    <!-- LOGIN SCREEN CONTAINER (Ditampilkan secara default jika belum login) -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 p-4 overflow-y-auto">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_45%)]"></div>
+        
+        <div class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 max-w-md w-full overflow-hidden transition-all duration-300 transform scale-100 relative z-10">
+            <!-- Header Login -->
+            <div class="bg-indigo-900 text-white p-8 text-center relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 opacity-10 text-white">
+                    <i data-lucide="shield" class="w-32 h-32"></i>
+                </div>
+                <div class="mx-auto w-16 h-16 bg-white text-indigo-900 p-3 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+                    <i data-lucide="lock" class="w-8 h-8"></i>
+                </div>
+                <h2 class="font-extrabold text-2xl tracking-wide">E-KEPEGAWAIAN</h2>
+                <p class="text-xs text-indigo-200 mt-1">Sistem Keamanan & Pengarsipan Berkas Digital</p>
+            </div>
+
+            <!-- Form Login -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="p-8 space-y-6">
+                
+                <!-- Tulisan Akses Uji Coba Telah Dihapus untuk Keamanan -->
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Username / NIP</label>
+                        <div class="relative">
+                            <input type="text" id="login-username" required placeholder="Masukkan username" class="w-full text-sm pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <i data-lucide="user" class="w-5 h-5 text-slate-400 absolute left-3 top-3"></i>
+                        </div>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg tracking-wide">E-KEPEGAWAIAN</h1>
-                        <p class="text-xs text-indigo-200">Sistem Informasi & Arsip Digital Kepegawaian</p>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Kata Sandi</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" required placeholder="Masukkan kata sandi" class="w-full text-sm pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <i data-lucide="key-round" class="w-5 h-5 text-slate-400 absolute left-3 top-3"></i>
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-indigo-600 focus:outline-none">
+                                <i id="toggle-password-icon" data-lucide="eye" class="w-5 h-5"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Status Database Cloud Sync -->
-                    <div id="db-sync-status" class="hidden text-xs bg-indigo-800 px-3 py-1.5 rounded-full border border-indigo-700 flex items-center gap-1.5">
-                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                        <span id="sync-text">Cloud Terhubung</span>
-                    </div>
-                    <span class="text-sm bg-indigo-950 px-3 py-1.5 rounded-full border border-indigo-800 flex items-center gap-1.5">
-                        Admin Kepegawaian
-                    </span>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- TOP STATS CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Pegawai</p>
-                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-total-pegawai">0</h3>
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="remember-me" class="rounded text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-slate-500 select-none">Ingat Sesi Saya</span>
+                    </label>
+                    <a href="#" onclick="showForgotPasswordAlert()" class="text-indigo-600 hover:underline font-medium">Lupa sandi?</a>
                 </div>
-                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-            </div>
-            
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Pegawai PNS</p>
-                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-pns">0</h3>
-                </div>
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                    <i data-lucide="award" class="w-6 h-6"></i>
-                </div>
-            </div>
 
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Pegawai PPPK</p>
-                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-pppk">0</h3>
-                </div>
-                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                    <i data-lucide="briefcase" class="w-6 h-6"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Berkas Ter-upload</p>
-                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-files">0</h3>
-                </div>
-                <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
-                    <i data-lucide="file-check" class="w-6 h-6"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- UTILITIES / BACKUP & SYNC CARD -->
-        <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-700">
-            <div class="flex items-center gap-4">
-                <div class="p-3.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
-                    <i data-lucide="database-backup" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-base">Arsip & Cadangan Google Drive</h3>
-                    <p class="text-xs text-slate-400 mt-1">Simpan atau pulihkan seluruh database pegawai beserta status unggahan berkas ke Google Drive Anda dalam format JSON.</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <!-- Backup To G-Drive -->
-                <button onclick="eksporDatabaseJSON()" class="flex-1 md:flex-initial text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
-                    <i data-lucide="download-cloud" class="w-4 h-4"></i>
-                    Unduh File Database (Simpan ke G-Drive)
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition duration-150 flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Masuk ke Sistem
                 </button>
-                <!-- Restore From G-Drive -->
-                <label class="flex-1 md:flex-initial cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition text-center">
-                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                    Impor Database (Ambil dari G-Drive)
-                    <input type="file" id="import-db-input" class="hidden" accept=".json" onchange="imporDatabaseJSON(event)">
-                </label>
-            </div>
+            </form>
         </div>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- LEFT PANEL: DAFTAR PEGAWAI -->
-            <div class="lg:col-span-4 space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                            <i data-lucide="folder-open" class="text-indigo-600 w-5 h-5"></i>
-                            Daftar Pegawai
-                        </h2>
-                        <button onclick="openAddModal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-3 rounded-lg flex items-center gap-1 transition">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Tambah
+
+    <!-- MAIN APPLICATION CONTAINER (Disembunyikan sebelum login) -->
+    <div id="app-container" class="hidden flex-col min-h-screen">
+        <!-- HEADER / NAVIGATION -->
+        <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white text-indigo-900 p-2 rounded-lg">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-lg tracking-wide">E-KEPEGAWAIAN</h1>
+                            <p class="text-xs text-indigo-200">Sistem Informasi & Arsip Digital Kepegawaian</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Status Database Cloud Sync -->
+                        <div id="db-sync-status" class="hidden text-xs bg-indigo-800 px-3 py-1.5 rounded-full border border-indigo-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            <span id="sync-text">Cloud Terhubung</span>
+                        </div>
+                        <span class="text-sm bg-indigo-955 px-3 py-1.5 rounded-full border border-indigo-800 flex items-center gap-1.5">
+                            Admin Kepegawaian
+                        </span>
+                        <!-- Logout Button -->
+                        <button onclick="handleLogout()" class="text-xs bg-red-600/20 text-red-300 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-full border border-red-500/30 flex items-center gap-1.5 transition">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Keluar
                         </button>
                     </div>
-
-                    <!-- Search & Filter -->
-                    <div class="space-y-3 mb-4">
-                        <div class="relative">
-                            <input type="text" id="search-input" onkeyup="filterPegawai()" placeholder="Cari Nama / NIP..." class="w-full text-sm pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                        </div>
-                        <div class="flex gap-2">
-                            <select id="filter-status" onchange="filterPegawai()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="ALL">Semua Status</option>
-                                <option value="PNS">PNS</option>
-                                <option value="PPPK">PPPK</option>
-                                <option value="CPNS">CPNS</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- List Container -->
-                    <div class="overflow-y-auto max-h-[500px] space-y-2 pr-1" id="pegawai-list">
-                        <!-- Rendered by JS -->
-                    </div>
                 </div>
             </div>
+        </header>
 
-            <!-- RIGHT PANEL: DETAIL PEGAWAI & MENU UPLOAD -->
-            <div class="lg:col-span-8 space-y-6">
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- TOP STATS CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Total Pegawai</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-total-pegawai">0</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                </div>
                 
-                <!-- DEFAULT NO SELECTION STATE -->
-                <div id="no-selection-state" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 flex flex-col items-center justify-center text-center h-[650px]">
-                    <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 animate-bounce">
-                        <i data-lucide="user-check" class="w-10 h-10"></i>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Pegawai PNS</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-pns">0</h3>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800">Pilih Pegawai Terlebih Dahulu</h3>
-                    <p class="text-sm text-slate-500 mt-2 max-w-sm">Pilih salah satu pegawai di panel sebelah kiri untuk mengelola data pribadi dan 14 dokumen wajib kepegawaian.</p>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <i data-lucide="award" class="w-6 h-6"></i>
+                    </div>
                 </div>
 
-                <!-- MAIN WORKSPACE -->
-                <div id="workspace-state" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Pegawai PPPK</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-pppk">0</h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <i data-lucide="briefcase" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Total Berkas Ter-upload</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="stat-files">0</h3>
+                    </div>
+                    <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
+                        <i data-lucide="file-check" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UTILITIES / BACKUP & SYNC CARD -->
+            <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-700">
+                <div class="flex items-center gap-4">
+                    <div class="p-3.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                        <i data-lucide="database-backup" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base">Arsip & Cadangan Google Drive</h3>
+                        <p class="text-xs text-slate-400 mt-1">Simpan atau pulihkan seluruh database pegawai beserta status unggahan berkas ke Google Drive Anda dalam format JSON.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Backup To G-Drive -->
+                    <button onclick="eksporDatabaseJSON()" class="flex-1 md:flex-initial text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                        Unduh File Database (Simpan ke G-Drive)
+                    </button>
+                    <!-- Restore From G-Drive -->
+                    <label class="flex-1 md:flex-initial cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition text-center">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        Impor Database (Ambil dari G-Drive)
+                        <input type="file" id="import-db-input" class="hidden" accept=".json" onchange="imporDatabaseJSON(event)">
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- LEFT PANEL: DAFTAR PEGAWAI -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i data-lucide="folder-open" class="text-indigo-600 w-5 h-5"></i>
+                                Daftar Pegawai
+                            </h2>
+                            <button onclick="openAddModal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-3 rounded-lg flex items-center gap-1 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Tambah
+                            </button>
+                        </div>
+
+                        <!-- Search & Filter -->
+                        <div class="space-y-3 mb-4">
+                            <div class="relative">
+                                <input type="text" id="search-input" onkeyup="filterPegawai()" placeholder="Cari Nama / NIP..." class="w-full text-sm pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="filter-status" onchange="filterPegawai()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="ALL">Semua Status</option>
+                                    <option value="PNS">PNS</option>
+                                    <option value="PPPK">PPPK</option>
+                                    <option value="CPNS">CPNS</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- List Container -->
+                        <div class="overflow-y-auto max-h-[500px] space-y-2 pr-1" id="pegawai-list">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: DETAIL PEGAWAI & MENU UPLOAD -->
+                <div class="lg:col-span-8 space-y-6">
                     
-                    <!-- PEGAWAI HEADER CARD -->
-                    <div class="bg-gradient-to-r from-indigo-800 to-indigo-950 text-white rounded-2xl p-6 shadow-sm relative overflow-hidden">
-                        <div class="absolute -right-10 -bottom-10 opacity-10 text-white">
-                            <i data-lucide="award" class="w-48 h-48"></i>
+                    <!-- DEFAULT NO SELECTION STATE -->
+                    <div id="no-selection-state" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 flex flex-col items-center justify-center text-center h-[650px]">
+                        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 animate-bounce">
+                            <i data-lucide="user-check" class="w-10 h-10"></i>
                         </div>
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                            <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 bg-white/10 rounded-full border-2 border-white/20 flex items-center justify-center text-white text-2xl font-bold" id="avatar-placeholder">
-                                    -
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h2 class="text-xl font-bold" id="det-nama">-</h2>
-                                        <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" id="det-badge-status">Status</span>
-                                    </div>
-                                    <p class="text-indigo-200 text-sm mt-0.5 flex items-center gap-1">
-                                        <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> NIP/NIPPPK: <span id="det-nip">-</span>
-                                    </p>
-                                    <p class="text-indigo-200 text-xs mt-1 flex items-center gap-1">
-                                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <span id="det-jabatan">-</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-xl border border-white/10 text-right min-w-[150px]">
-                                <div class="text-xs text-indigo-200 uppercase tracking-wider font-semibold">Kelengkapan Berkas</div>
-                                <div class="text-2xl font-black mt-0.5 text-green-300" id="det-kelengkapan-persen">0%</div>
-                                <div class="text-[10px] text-indigo-100" id="det-kelengkapan-rasio">0 dari 14 diunggah</div>
-                            </div>
-                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Pilih Pegawai Terlebih Dahulu</h3>
+                        <p class="text-sm text-slate-500 mt-2 max-w-sm">Pilih salah satu pegawai di panel sebelah kiri untuk mengelola data pribadi dan 14 dokumen wajib kepegawaian.</p>
                     </div>
 
-                    <!-- 14 MENU UPLOAD DOKUMEN -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                        <div class="border-b border-slate-100 pb-4 mb-6">
-                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                                <i data-lucide="files" class="text-indigo-600 w-5 h-5"></i>
-                                Unggah & Kelola Dokumen Wajib (14 Berkas Utama)
-                            </h3>
-                            <p class="text-xs text-slate-500 mt-1">Silakan unggah berkas bertipe PDF/Gambar dengan batas ukuran maksimal simulasi 5MB.</p>
+                    <!-- MAIN WORKSPACE -->
+                    <div id="workspace-state" class="hidden space-y-6">
+                        
+                        <!-- PEGAWAI HEADER CARD -->
+                        <div class="bg-gradient-to-r from-indigo-800 to-indigo-950 text-white rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                            <div class="absolute -right-10 -bottom-10 opacity-10 text-white">
+                                <i data-lucide="award" class="w-48 h-48"></i>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 bg-white/10 rounded-full border-2 border-white/20 flex items-center justify-center text-white text-2xl font-bold" id="avatar-placeholder">
+                                        -
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h2 class="text-xl font-bold" id="det-nama">-</h2>
+                                            <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold" id="det-badge-status">Status</span>
+                                        </div>
+                                        <p class="text-indigo-200 text-sm mt-0.5 flex items-center gap-1">
+                                            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> NIP/NIPPPK: <span id="det-nip">-</span>
+                                        </p>
+                                        <p class="text-indigo-200 text-xs mt-1 flex items-center gap-1">
+                                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <span id="det-jabatan">-</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-xl border border-white/10 text-right min-w-[150px]">
+                                    <div class="text-xs text-indigo-200 uppercase tracking-wider font-semibold">Kelengkapan Berkas</div>
+                                    <div class="text-2xl font-black mt-0.5 text-green-300" id="det-kelengkapan-persen">0%</div>
+                                    <div class="text-[10px] text-indigo-100" id="det-kelengkapan-rasio">0 dari 14 diunggah</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Grid 14 Dokumen -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dokumen-grid">
-                            <!-- JS akan merender 14 item dokumen ke sini secara dinamis -->
+                        <!-- 14 MENU UPLOAD DOKUMEN -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                            <div class="border-b border-slate-100 pb-4 mb-6">
+                                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                    <i data-lucide="files" class="text-indigo-600 w-5 h-5"></i>
+                                    Unggah & Kelola Dokumen Wajib (14 Berkas Utama)
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-1">Silakan unggah berkas bertipe PDF/Gambar dengan batas ukuran maksimal simulasi 5MB.</p>
+                            </div>
+
+                            <!-- Grid 14 Dokumen -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dokumen-grid">
+                                <!-- JS akan merender 14 item dokumen ke sini secara dinamis -->
+                            </div>
                         </div>
+
                     </div>
 
                 </div>
 
             </div>
+        </main>
 
-        </div>
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-12 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>&copy; 2026 E-Kepegawaian Dinas. All Rights Reserved. Dashboard Arsip & Dokumen Digital.</p>
-            <div class="flex gap-4">
-                <a href="#" class="hover:text-white transition">Panduan Pengguna</a>
-                <a href="#" class="hover:text-white transition">Kebijakan Privasi</a>
-                <a href="#" class="hover:text-white transition">Bantuan Teknis</a>
+        <!-- FOOTER -->
+        <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-12 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p>&copy; 2026 E-Kepegawaian Dinas. All Rights Reserved. Dashboard Arsip & Dokumen Digital.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="hover:text-white transition">Panduan Pengguna</a>
+                    <a href="#" class="hover:text-white transition">Kebijakan Privasi</a>
+                    <a href="#" class="hover:text-white transition">Bantuan Teknis</a>
+                </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </div>
 
     <!-- MODAL TAMBAH PEGAWAI -->
     <div id="add-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -701,7 +766,9 @@
                 } else if (doc.isMock) {
                     // Buat file teks dummy dinamis jika merupakan mock data awal
                     const dummyContent = `=== ARSIP DIGITAL PEGAWAI ===\n\nNama Pegawai: ${peg.nama}\nNIP: ${peg.nip}\nBerkas: ${doc.namaFile}\nTanggal Arsip: ${doc.tanggal}\nStatus Verifikasi: Valid (Simulated)`;
-                    const blob = new Blob([dummyContent], { type: 'text/plain;charset=utf-8' });
+                    const textEncoder = new TextEncoder();
+                    const dummyBytes = textEncoder.encode(dummyContent);
+                    const blob = new Blob([dummyBytes], { type: 'text/plain;charset=utf-8' });
                     const blobUrl = URL.createObjectURL(blob);
                     
                     const link = document.createElement('a');
@@ -740,10 +807,15 @@
                 totalFiles += Object.keys(p.dokumen || {}).length;
             });
 
-            document.getElementById('stat-total-pegawai').innerText = total;
-            document.getElementById('stat-pns').innerText = pns;
-            document.getElementById('stat-pppk').innerText = pppk;
-            document.getElementById('stat-files').innerText = totalFiles;
+            const totalEl = document.getElementById('stat-total-pegawai');
+            const pnsEl = document.getElementById('stat-pns');
+            const pppkEl = document.getElementById('stat-pppk');
+            const filesEl = document.getElementById('stat-files');
+
+            if (totalEl) totalEl.innerText = total;
+            if (pnsEl) pnsEl.innerText = pns;
+            if (pppkEl) pppkEl.innerText = pppk;
+            if (filesEl) filesEl.innerText = totalFiles;
         }
 
         // EKSPOR DATABASE KE FILE JSON (Cadangkan ke Google Drive)
@@ -760,7 +832,7 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            showToast("Database berhasil diekspor! Silakan upload berkas 'database_kepegawaian.json' ini ke Google Drive Anda.");
+            showToast("Database berhasil diekspor! Silakan unggah berkas 'database_kepegawaian.json' ini ke Google Drive Anda.");
         }
 
         // IMPOR DATABASE DARI FILE JSON
@@ -825,7 +897,87 @@
             showToast(`Pegawai "${nama}" berhasil didaftarkan.`);
         }
 
-        // Daftarkan fungsi ke global agar bisa dipanggil lewat atribut HTML `onclick`
+        // SISTEM AUTH / LOGIN KEAMANAN WEB
+        function handleLogin(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            // Kredensial Validasi
+            if (usernameInput === "admin" && passwordInput === "admin123") {
+                // Berhasil login
+                if (rememberMe) {
+                    localStorage.setItem('e_kepegawaian_logged_in', 'true');
+                } else {
+                    sessionStorage.setItem('e_kepegawaian_logged_in', 'true');
+                }
+                
+                showToast("Selamat Datang! Login berhasil.", "success");
+                enterApp();
+            } else {
+                // Gagal login
+                showToast("Username atau Password salah!", "error");
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('login-password');
+            const toggleIcon = document.getElementById('toggle-password-icon');
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordField.type = "password";
+                toggleIcon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        // Berpindah ke Halaman Utama setelah Login sukses
+        function enterApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('flex');
+            
+            // Inisialisasi ulang tampilan
+            renderDaftarPegawai();
+            updateDashboardStats();
+            lucide.createIcons();
+        }
+
+        // Logout Sesi Aman
+        function handleLogout() {
+            localStorage.removeItem('e_kepegawaian_logged_in');
+            sessionStorage.removeItem('e_kepegawaian_logged_in');
+            
+            // Reset formulir login
+            document.getElementById('login-form').reset();
+            
+            // Tampilkan kembali layar login
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('flex');
+            document.getElementById('login-screen').classList.remove('hidden');
+            
+            showToast("Anda telah keluar dari sistem secara aman.", "info");
+            lucide.createIcons();
+        }
+
+        function showForgotPasswordAlert() {
+            showToast("Hubungi administrator IT Dinas untuk menyetel ulang kata sandi Anda.", "info");
+        }
+
+        // Cek status sesi login saat aplikasi dibuka
+        function checkLoginSession() {
+            const isRemembered = localStorage.getItem('e_kepegawaian_logged_in') === 'true';
+            const isSessionActive = sessionStorage.getItem('e_kepegawaian_logged_in') === 'true';
+
+            if (isRemembered || isSessionActive) {
+                enterApp();
+            }
+        }
+
+        // Daftarkan fungsi ke global agar bisa dipanggil lewat atribut HTML
         window.filterPegawai = filterPegawai;
         window.selectPegawai = selectPegawai;
         window.handleSimulasiUpload = handleSimulasiUpload;
@@ -836,11 +988,15 @@
         window.openAddModal = openAddModal;
         window.closeAddModal = closeAddModal;
         window.handleTambahPegawai = handleTambahPegawai;
+        window.handleLogin = handleLogin;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.handleLogout = handleLogout;
+        window.showForgotPasswordAlert = showForgotPasswordAlert;
 
         // Run Init
         window.addEventListener('DOMContentLoaded', () => {
             initFirebase();
-            renderDaftarPegawai();
+            checkLoginSession();
             updateDashboardStats();
             lucide.createIcons();
         });
